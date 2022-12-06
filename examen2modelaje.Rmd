@@ -1,0 +1,420 @@
+---
+title: "Examen Pracial 2 Modelaje Enfermedades Infecciosas"
+author: "Rebeca Vega Escamilla"
+date: "`r Sys.Date()`"
+output:
+  prettydoc::html_pretty:
+    theme: architect
+    highlight: github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+
+```{r}
+library(deSolve)
+```
+
+# Estadio asintomático
+
+
+Las siguientes ecuaciones describen un modelo por compartimentos de una enfermedad infecciosa  con un estadio asintomático.
+$$\dot S = \nu -\beta S(I +qA)-\mu S$$
+$$\dot E= \beta S(I+qA) -(\eta+\mu)E $$
+$$\dot I = p\eta E -(\alpha +\mu)I$$
+$$\dot A= (1-p)\eta E -(\gamma +\mu)A$$
+$$\dot R=\alpha I +\gamma A-\mu R$$
+1.  Dibuja el esquema por compartimentos que representa este conjunto de ecuaciones.
+
+2.  Explica el significado de cada ecuación: es decir, explica el
+    significado de cada término y cada parámetro. ¿Existen parámetros
+    que están acotados, si es así indica el intervalo en donde pueden
+    variar?
+    
+    "S" Son los individuos susceptibles.
+    
+    "E" Son individuos en estado de latencia.
+    
+    "I" Son individuos infectados.
+    
+    "A" Son individuos asíntomáticos.
+    
+    "R" Son individuos recuperados que tuvieron que pasar por infectados.
+    
+$\ \nu$: Nacimientos.
+
+$\ \mu$ : Muerte no vínculada a la infección.
+
+$\beta$ : Tasa de infección
+
+$q$ : Interacción entre susceptibles y asintomáticos.
+
+$\ pn$ : Probabilidad de que un expuesto que se infecte sea asintomático.
+
+$\ (1-p)n$ : La probabilidad de que un infectado presente síntomas. La población es 1, este parámetro representa el resto de la población.
+
+$\gamma$ : Tasa de recuperación de infectados.
+
+$\alpha$ : Tasa de recuperación de asintomáticos.
+    
+    
+3.  ¿Bajo qué condiciones la población se conservaría?
+
+Si la tasa de nacimientos y defunciones fuera exactamente igual
+
+4.  Encuentra, si existe, el punto de equilibrio *free-disease*\
+
+ (V-uS, 0, 0, 0, 0)
+
+5.  ¿Qué tipo de enfermedad puede estar describiendo? Justifica tu
+    respuesta.
+    Podría ser COVID porque hay asintomáticos y las tasas de mortalidad varían depende de si eres o no asintomático
+
+6.  Selecciona un conjunto de parámetros adecuados y resuelve
+    numéricamente el sistema de ecuaciones diferenciales. Asegurate que
+    tu solución alcance un punto de equilibrio. Discute tu resultado.
+```{r}
+SEIAR <- function(time, state, parameters){
+  with(as.list(c(state, parameters)),{
+    dS <- +nu -beta*S*I -beta*S*phi*A -mu
+    dE <- +beta*S*I +beta*S*phi*A -eta*E -mu*E
+    dI <- rho*eta*E -alfa*I -mu*I
+    dA <- eta*(1-rho)*E -gama*A -mu*A
+    dR <- alfa*I + gama*A -mu*R
+    list(c(dS, dE, dI, dA, dR))
+  })
+}
+par1 <- c(alfa = 2, beta= 4, gama= 6, phi = 8, rho= 1, nu = 2, eta = 3 ,mu = 4)  
+con_ini1 <- c(S= 80, E = 10, I = 20, A = 5, R = 4)
+tiempo1 <- seq(0, 1, by = 0.001)
+out <- ode(con_ini1, tiempo1, SEIAR, par1)
+
+
+matplot(out[ , 1], out[ , 2:6], type = "l", xlab = "tiempo", ylab = "Población",
+        main = "SEIAR", lwd = 2, lty = 1)
+legend("topright", c("Susceptible", "Infectado", "Latente", "Asintomatico", "Recuperado"), col = 1:4,lty=1:4,cex=0.5)
+```
+    
+    
+    # Estadio crónico
+
+Las siguientes ecuaciones describen un modelo por compartimentos de una
+enfermedad infecciosa con un estadio crónico.
+$$\dot S = \nu -\beta S(I +qC)-\mu S +\rho R$$
+$$\dot C= \beta S(I+qC) -(\eta+\gamma +\mu)C $$
+$$\dot I = \eta C -(\alpha +\mu)I$$
+$$\dot R= \alpha I +\gamma C -(\mu +\rho)R$$
+
+1.  Dibuja el esquema por compartimentos que representa este conjunto de
+    ecuaciones
+2.  Explica el significado de cada ecuación: es decir, explica el
+    significado de cada término y cada parámetro. ¿Existen parámetros
+    que están acotados, si es así indica el intervalo en donde pueden
+    variar?
+    
+"S" Susceptibles.
+
+"C" Estadio crónico.
+
+"I" Estadio infeccioso.
+
+"R" Recuperado.
+
+$\ \nu$: Nacimientos.
+
+$\ \mu$ : Muerte no vínculada a la infección.
+
+$\beta$ : Interacción entre susceptible y crónico.
+
+$q$ : Interacción entre susceptibles e infectado.
+
+$\ n$ : Tasa en la que pasa de estado crónico a infectado.
+
+$\gamma$ : Tasa de individuos recuperados a crónicos.
+
+$\alpha$ : Tasa de recuperación de infecciosos.
+
+$p$ : Tasa a la que un individuo recuperado vuelve a ser infeccioso.
+
+3.  ¿Bajo qué condiciones la población se conservaría?
+
+Si la tasa de nacimientos y defunciones fuera exactamente igual
+
+4.  Encuentra, si existe, el punto de equilibrio *free-disease*\
+
+(V/N, 0, 0, 0, 0)
+
+5.  ¿Qué tipo de enfermedad puede estar describiendo? Justifica tu
+    respuesta.
+    
+   Tal vez influenza 
+    
+6.  Selecciona un conjunto de parámetros adecuados y resuelve
+    numéricamente el sistema de ecuaciones diferenciales. Asegurate que
+    tu solución alcance un punto de equilibrio.Discute tu resultado.
+```{r}
+SCIR <- function(time, state, parameters){
+  with(as.list(c(state, parameters)),{
+    dS <- +mu -beta*S*I -beta*S*epsilon*C -miu +rho*R
+    dC <- +beta*S*I +beta*S*epsilon*C -eta*C -gama*C -miu*C
+    dI <- eta*C - alfa*I -miu 
+    dR <- alfa*I + gama*C -miu*R -rho*R
+    list(c(dS, dC, dI, dR))
+  })
+}
+parsSCIR <- c(alfa = 3, beta= 5, gama= 5, epsilon = 5, rho= 10, mu = 10, eta = 6 ,miu = 3)  
+condiciones_inicialesSCIR <- c(S= 90, I = 10, C = 0, R = 0)
+tiempoSCIR <- seq(0, 1, by = 0.001)
+outSCIR <- ode(condiciones_inicialesSCIR, tiempoSCIR, SCIR, parsSCIR)
+
+
+matplot(outSCIR[ , 1], outSCIR[ , 2:5], type = "l", xlab = "tiempo", ylab = "PoblaciÃ³n",
+        main = "SCIR", lwd = 2, lty = 1)
+legend("topright", c("Susceptible", "Infectado", "Cronico", "Recuperado"))
+```
+    
+
+# Estadio de inmunidad pasiva
+
+La inmunidad pasiva consiste en la transferencia de inmunidad activa en
+la forma de anticuerpos de un individuo a otro.La inmunidad pasiva puede
+suceder de forma natural, por ejemplo, por la vía materna al feto a
+través de la placenta o al bebé vía la leche materna. El estadio de
+inmunidad pasiva se denota por la variable $M(t)$ y se añade al sistema
+antes de que los individuops sean suceptibles. El siguiente modelo
+**MSIR** se describe con las siguientes ecuaciones diferenciales.
+
+$$\dot M = \nu -\rho M- \mu M$$ $$\dot S= \rho M -\beta SI-\mu S $$
+$$\dot I = \beta SI -(\alpha +\mu)I$$ $$\dot R= \alpha I -\mu R$$
+
+1.  ¿Bajo qué condiciones se puede inducir de forma artificial la
+    inmunidad pasiva?
+    Inyectar al individuo con anticuerpos específicos.
+2.  Dibuja el esquema por compartimentos que representa este conjunto de ecuaciones
+3.  Explica el significado de cada ecuación: es decir, explica el  significado de cada término y cada parámetro. ¿Existen parámetros
+    que están acotados, si es así indica el intervalo en donde pueden
+    variar?
+
+"M" Inmunidad pasiva
+
+"S" Susceptibles
+
+"I" Infectados
+
+"R" Recuperados
+
+$\ \nu$: Nacimientos.
+
+$\ \mu$ : Muerte no vínculada a la infección.
+
+$\beta$ : Interacción entre susceptible e infectado.
+
+$\alpha$ : Tasa de recuperación.
+  
+4.  ¿Bajo qué condiciones la población se conservaría?
+
+Si la tasa de nacimientos y muertes fuera igual.
+
+5.  Encuentra, si existe, el punto de equilibrio *free-disease*\
+
+6.  ¿Qué tipo de enfermedad puede estar describiendo? Justifica tu
+    respuesta.
+    
+   Podría ser sarampión.
+    
+7.  Selecciona un conjunto de parámetros adecuados y resuelve
+    numéricamente el sistema de ecuaciones diferenciales. Asegurate que
+    tu solución alcance un punto de equilibrio.Discute tu resultado.
+```{r}
+SEIAR <- function(time, state, parameters){
+  with(as.list(c(state, parameters)),{
+    dS <- +mu -beta*S*I -beta*S*epsilon*A -miu
+    dE <- +beta*S*I +beta*S*epsilon*A -eta*E -miu*E
+    dI <- rho*eta*E -alfa*I -miu*I
+    dA <- eta*(1-rho)*E -gama*A -miu*A
+    dR <- alfa*I + gama*A -miu*R
+    list(c(dS, dE, dI, dA, dR))
+  })
+}
+pars <- c(alfa = 3, beta= 5, gama= 5, epsilon = 5, rho= 10, mu = 10, eta = 6 ,miu = 3)  
+condiciones_iniciales <- c(S= 90, E = 20, I = 10, A = 0, R = 0)
+tiempo <- seq(0, 1, by = 0.001)
+out <- ode(condiciones_iniciales, tiempo, SEIAR, pars)
+
+
+matplot(out[ , 1], out[ , 2:6], type = "l", xlab = "tiempo", ylab = "PoblaciÃ³n",
+        main = "SEIAR", lwd = 2, lty = 1)
+legend("topright", c("Susceptible", "Infectado", "Latente", "Asintomatico", "Recuperado"), col = 1:4,lty=1:4,cex=0.5)
+```
+    
+
+
+# Tratamiento
+
+Considera el sigueinte conjunto de ecuaciones diferenciales que
+describen una enfermedad infecciosa con individuos en tratamiento
+$T(t)$.
+
+$$\dot S = \nu -\beta_1 \frac{SI}{N}- \mu S$$
+$$\dot E= \beta_1\frac{SI}{N} + \beta_2 \frac{TI}{N}-(\mu +\kappa +r_1)E +pr_2I $$
+$$\dot I = \kappa E-(r_2+\mu)I $$
+$$\dot T = r_1E +qr_2I -\beta_2\frac{TI}{N}-\mu T$$
+
+con $N(t)=S(t)+E(t)+I(t)+T(t)$
+1. Dibuja el esquema por compartimentos
+que representa este conjunto de ecuaciones
+
+
+
+2. Explica el significado de
+cada ecuación: es decir, explica el significado de cada término y cada
+parámetro. ¿Existen parámetros que están acotados, si es así indica el
+intervalo en donde pueden variar?
+
+"E" Expuestos
+
+"S" Susceptibles
+
+"I" Infectados
+
+"T" Tratamiento
+
+$\ \nu$: Nacimientos (o entrada de individuos al sistema).
+
+$\ \mu$ : Muerte no vínculada a la infección (o salida del sistema).
+
+$\beta$ : Interacción entre susceptible e infectado.
+
+$\kappa$ : Tasa de infección.
+
+$\gamma$ : Tasa de expuesto a entrar a un tratamiento.
+
+$\beta2$ : Interacción entre inidividuo en tratamienta a infectado.
+
+qr2I: Tasa de Infectados a entrar a un tratamiento.
+
+
+
+3. ¿Bajo qué condiciones la población
+se conservaría? 
+4. Encuentra, si existe, el punto de equilibrio
+*free-disease*\
+5. ¿Qué tipo de enfermedad puede estar describiendo? Justifica tu
+respuesta.
+Cualquier enfermedad de vías respiratorias común.
+
+6. Selecciona un conjunto de parámetros adecuados y resuelve
+numéricamente el sistema de ecuaciones diferenciales. Asegurate que tu
+solución alcance un punto de equilibrio.Discute tu resultado.
+```{r}
+SEIT <- function(t,state,parameters){
+  with(as.list(c(state,parameters)), {
+    dS<- nu*beta_1*S*I/(S+E+I+T)-mu*S 
+    dE<- beta_1*S*I/(S+E+I+T)+beta_2*T*I/(S+E+I+T)-mu*E-kappa*E-r_1*E+r_2*I
+    dI<- kappa*E-r_2*I-mu*I
+    dT<- r_1*E +r_2*I-beta_2*T*I/(S+E+I+T)-mu*T
+    list(c(dS, dE, dI, dT))
+  })
+}
+
+param<- c(nu = 12, beta_1 = 6, mu = 4, beta_2 = 2, kappa = 3, r_1 = 0.2, r_2 = 0.1)
+
+cond<- c(S=45, E= 23, I = 46, T = 0 )
+
+tiempo <- seq(0,5,0.001)
+
+out5<- ode(cond,tiempo,SEIT,param)
+
+matplot(out5[ , 1], out5[ , 2:5], type = "l", xlab = "tiempo", ylab = "Población",
+main = "SEIT", lwd = 2)
+legend("topright", c("Susceptible", "Expuesto", "Infectado", "Tratado"), col = 3:6,lty=1:3,cex=0.5)
+```
+
+
+# Modelo epidemiológico de la CDMX
+
+Considera el modelo que usó la CDMX para moniterear al inicio de la
+pandemia de COVID-19 los casos, los hospitalizados y muertes en dicha
+entidad. El modelo se encuentra
+[acá](https://modelo.covid19.cdmx.gob.mx/modelo-epidemico)
+
+1.  Explica el significado de cada ecuación: es decir, explica el
+    significado de cada término y cada parámetro.
+    
+    El modelo esta conformado por 9 estadios. Los cuales estan determinados por como se encuentra un indiviudo en terminos de la infección por covid19. Los 9 estadios son los siguientes:
+
+S = Individuos Susceptibles
+
+E = Individuos Expuestos
+
+I = Individuos Infectados
+
+L = Contagiados sintomáticos leves
+
+G = Contagiados sintomáticos graves
+
+H = Hospitalizados
+
+ICU = Unidad de Terapia Intensiva
+
+R = Recuperados
+
+M = Muertos
+
+La ecuaciones del modelo tienen distintos parámetros, los cuales estan dados por medio de tasas y el número de diás en los distintos procesos de la infección. Los parámetros estan conformados de la siguiente forma:
+
+Dinfect: Es el tiempo en el que una persona es infecciosa.\
+Dincub: tiempo en días de incubación del virus. Pgrave: Tasa de hospitalización.\
+DRL: tiempo de recuperación para los casos leves, este parámetro esta dado en días.\
+Dhosp: Tiempo entre presencia de síntomas y su hospitalización en evolución para casos graves.\
+P ICU: tasa de la unidad de cuidados intesivos.\
+D RH: Tiempo de la hospitalización de los casos graves que no pasaron por UCI y su recuperación, esto esta dado en días.\
+pM: tasa de letalidad respecto a población general.\
+D ICU: tiempo entre hospitalización de los casos graves y el ingreso a UCI, esta dado en días.\
+D RICU: ingreso a UCI y recuperación.\
+DM: tiempo entre ingreso a UCI y deceso.\
+N: Población susceptible.\
+R0: número reproductivo básico.
+
+2.  ¿La población se conserva?
+
+No.
+
+3.  Encuentra, si existe, el punto de equilibrio *free-disease*\
+4.  Usa los parámetros de parámetros que sugieren y resuelve
+    numéricamente el sistema de ecuaciones diferenciales. Asegurate que
+    tu solución alcance un punto de equilibrio.Discute tu resultado.
+```{r}
+Sars <- function(t,state,parameters){
+  with(as.list(c(state,parameters)), {
+    dS<- -(R0/Dinfect)*I*S
+    dE<- (R0/Dinfect)*I*S-(1/Dincub)*E
+    dI<- (1/Dincub)*E-(1/Dinfect)*I
+    dL<- (1-Pgrave)*(1/Dinfect)*I-(1/DRL)*L
+    dG <- Pgrave*(1/Dinfect)*I-(1/Dhosp)*G
+    dH <- (1/Dhosp)*G-(1-Picu)*(1/DRH)*H-Picu*(1/Dicu)*H
+    dICU<- Picu*(1/Dicu)*H-(1-pm)*(1/Dricu)*ICU-pm*(1/Dm)*ICU
+    dR<- (1/DRL)*L+(1-Picu)*(1/DRH)*H+(1-pm)*(1/Dricu)*ICU
+    dM <- pm*(1/Dm)*ICU
+    list(c(dS, dE, dI, dL, dG, dH, dICU, dR, dM))
+  })
+}
+
+param2<- c(R0 = 2.83, Dinfect = 2.9, Dincub = 5.2, Pgrave = 13.80, DRL = 14, Dhosp =4, Picu = 5, DRH = 12, Dicu = 1, pm = 3, Dricu = 7, Dm = 8)
+
+condi2<- c(S=600, E= 500, I = 89, L = 0, G = 68, H = 250, ICU = 240, R = 300, M = 200 )
+
+tiem2 <- seq(0,50,0.001)
+
+outsars<- ode(condi2,tiem2,Sars,param2)
+```
+    
+5.  ¿Qué modificaciones se te ocurren que podrían implementarse para
+    mejorar ese modelo?
+```{r}
+matplot(outsars[ , 1], outsars[ , 2:10], type = "l", xlab = "tiempo", ylab = "Población",
+main = "Modelo SarsCov2", lwd = 2)
+legend("topright", c("Individuos Susceptible", "Individuos Expuesto", "Individuo Infectado", "Contagiados SL", "Contagiados SG", "Hospitalizados", "ICU", "Individuos Recuperados", "Muertos"), col = 3:12,lty=1:3,cex=0.5)
+```
+    
